@@ -721,7 +721,7 @@ function fresh(keep){
 }
 function load(){
   try{
-    var raw = localStorage.getItem(KEY);
+    var raw = sessionStorage.getItem(KEY);
     if (!raw) return null;
     var s = JSON.parse(raw);
     if (s && !s.id) s.id = newId();
@@ -731,7 +731,7 @@ function load(){
 var saveT;
 function persist(){
   clearTimeout(saveT);
-  saveT = setTimeout(function(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }, 300);
+  saveT = setTimeout(function(){ try{ sessionStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }, 300);
 }
 var S = load() || fresh();
 function R(id){ return S.r[id] || (S.r[id] = {s:null, v:['','']}); }
@@ -1004,7 +1004,7 @@ function resetButton(){
     }
     clearTimeout(timer);
     S = fresh({tecnico:S.d.tecnico, cc:S.d.cc});
-    try{ localStorage.removeItem(KEY); }catch(e){}
+    try{ sessionStorage.removeItem(KEY); }catch(e){}
     build(); window.scrollTo(0,0);
     toast('Formulario nuevo. Se conservaron el técnico y su C.C.');
   });
