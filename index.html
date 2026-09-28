@@ -944,8 +944,6 @@ function build(){
   var app = $('#app');
   app.textContent = '';
 
-  app.append(h('p', {class:'note', text:'Lo que completas se guarda solo en este dispositivo. Al terminar, genera el PDF y compártelo con MDM y con el cliente.'}));
-
   // Fecha, técnico, C.C. + Datos del servicio
   function fld(key, label, extra, wide){
     var props = {type:'text', autocomplete:'off', value: S.d[key] || ''};
@@ -985,10 +983,6 @@ function build(){
   app.append(h('div', {class:'legal'}, LEGAL.map(function(p){ return h('p', {text:p}); })));
   app.append(h('div', {class:'sigs'}, sigCard('sc','sct','Cliente','ac'), sigCard('st','stt','Técnico','at')));
 
-  app.append(h('section', {class:'info'},
-    h('h3', {text:'Cuando termines'}),
-    h('p', {text: 'Genera el PDF' + (ARCHIVE_URL ? ' (se guarda solo una copia en el archivo de Servicio Técnico)' : '') + '.'}),
-    h('p', {text:'Después, asegúrate de compartir el archivo con MDM y con el cliente, por mail o WhatsApp.'})));
   app.append(h('div', {class:'reset'}, resetButton()));
   updateProgress();
 }
