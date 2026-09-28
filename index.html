@@ -613,7 +613,7 @@ var LEGAL = [
 
 var DATA_FIELDS = [
   ['orden','N° de orden de servicio'],['sku','SKU'],['modelo','Modelo'],['serie','N° de serie del equipo'],
-  ['cliente','Nombre del cliente',true],['contacto','Contacto en sitio'],['telefono','Teléfono'],
+  ['cliente','Nombre del cliente',true],['contacto','Nombre del contacto en sitio'],['telefono','Teléfono'],
   ['ciudad','Ciudad'],['direccion','Dirección',true]
 ];
 
@@ -959,7 +959,7 @@ function build(){
   var whoGrid = h('div', {class:'grid'},
     fld('fecha','Fecha',{type:'date'}),
     fld('tecnico','Nombre del técnico',{autocapitalize:'words'}, true),
-    fld('cc','C.C.',{inputmode:'numeric'})
+    fld('cc','C.C. del técnico',{inputmode:'numeric'})
   );
   var dataGrid = h('div', {class:'grid', style:'margin-top:12px'},
     DATA_FIELDS.map(function(f){
@@ -1021,7 +1021,7 @@ function toast(msg){
 /* ---------- Pendientes antes de generar ---------- */
 function issues(){
   var out = [];
-  var need = [['fecha','Fecha'],['tecnico','Técnico'],['sku','SKU'],['serie','N° de serie'],['cliente','Nombre del cliente']];
+  var need = [['fecha','Fecha'],['tecnico','Nombre del técnico'],['sku','SKU'],['serie','N° de serie'],['cliente','Nombre del cliente']];
   var falt = need.filter(function(n){ return !String(S.d[n[0]] || '').trim(); }).map(function(n){ return n[1]; });
   if (falt.length) out.push({k:'datos', text:'Faltan datos del servicio: ' + falt.join(', ')});
   var un = rows.filter(function(x){ return x.st.s === null; }).length;
@@ -1103,7 +1103,7 @@ function buildPDF(){
   // Datos del servicio
   h2('Datos del servicio'); y += 2;
   [[['N° de orden de servicio','orden'],['SKU','sku']],[['Modelo','modelo'],['N° de serie del equipo','serie']],
-   [['Nombre del cliente','cliente'],['Contacto en sitio','contacto']],[['Ciudad','ciudad'],['Teléfono','telefono']],
+   [['Nombre del cliente','cliente'],['Nombre del contacto en sitio','contacto']],[['Ciudad','ciudad'],['Teléfono','telefono']],
    [['Dirección','direccion']]].forEach(function(pair){
     pair.forEach(function(f, i){
       var x = M + i * 94, w = pair.length === 1 ? CW : 88;
