@@ -958,8 +958,8 @@ function build(){
   var idHead = h('div', {class:'sec-head'}, h('h2', {text:'Datos del servicio'}));
   var whoGrid = h('div', {class:'grid'},
     fld('fecha','Fecha',{type:'date'}),
-    fld('cc','C.C.',{inputmode:'numeric'}),
-    fld('tecnico','Técnico',{autocapitalize:'words'}, true)
+    fld('tecnico','Nombre del técnico',{autocapitalize:'words'}, true),
+    fld('cc','C.C.',{inputmode:'numeric'})
   );
   var dataGrid = h('div', {class:'grid', style:'margin-top:12px'},
     DATA_FIELDS.map(function(f){
