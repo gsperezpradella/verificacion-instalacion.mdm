@@ -730,6 +730,7 @@ function load(){
 }
 var saveT;
 function persist(){
+  clearPendingPdf();
   clearTimeout(saveT);
   saveT = setTimeout(function(){ try{ sessionStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }, 300);
 }
@@ -999,6 +1000,7 @@ function resetButton(){
     clearTimeout(timer);
     S = fresh({tecnico:S.d.tecnico, cc:S.d.cc});
     try{ sessionStorage.removeItem(KEY); }catch(e){}
+    clearPendingPdf();
     build(); window.scrollTo(0,0);
     toast('Formulario nuevo. Se conservaron el técnico y su C.C.');
   });
@@ -1344,9 +1346,15 @@ async function archiveSubmission(blob, filename){
   return left.some(function(x){ return x.k === item.k; }) ? 'pendiente' : 'enviada';
 }
 
-async function savePdf(blob, filename){
-  var dl = null;
-  try{ if (window.claude && typeof window.claude.use === 'function') dl = await window.claude.use('downloads'); }catch(e){ dl = null; }
+var pendingPdf = null;
+function clearPendingPdf(){
+  if (!pendingPdf) return;
+  pendingPdf = null;
+  var gen = $('#gen');
+  if (gen) gen.textContent = 'Generar PDF';
+}
+
+async function trySavePdf(dl, blob, filename){
   if (dl){
     try{ await dl.save({filename: filename, data: blob}); return 'saved'; }
     catch(e){
@@ -1355,65 +1363,64 @@ async function savePdf(blob, filename){
       throw e;
     }
   }
-  if (navigator.share){
-    try{
-      var file = new File([blob], filename, {type:'application/pdf'});
-      var canFiles = !navigator.canShare || navigator.canShare({files:[file]});
-      if (canFiles){
-        await withTimeout(navigator.share({files:[file], title: filename}), 12000);
-        return 'shared';
-      }
-    }catch(e){
-      if (e && e.name === 'AbortError') return 'cancelled';
-      // cualquier otro error (o el timeout) sigue abajo con la descarga directa
-    }
-  }
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a'); a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
   return 'saved';
 }
-function withTimeout(promise, ms){
-  return new Promise(function(resolve, reject){
-    var t = setTimeout(function(){ reject(new Error('timeout')); }, ms);
-    promise.then(function(v){ clearTimeout(t); resolve(v); }, function(e){ clearTimeout(t); reject(e); });
-  });
+
+// Se llama al toque del botón, con el PDF ya generado de antes: así el
+// share/descarga queda pegado al toque y no pierde el permiso del
+// navegador por la demora de generar el PDF.
+async function deliverPdf(blob, filename){
+  var gen = $('#gen');
+  if (navigator.share){
+    try{
+      var file = new File([blob], filename, {type:'application/pdf'});
+      if (!navigator.canShare || navigator.canShare({files:[file]})){
+        navigator.share({files:[file], title: filename}).catch(function(){});
+        clearPendingPdf();
+        return;
+      }
+    }catch(e){}
+  }
+  var dl = null;
+  try{ if (window.claude && typeof window.claude.use === 'function') dl = await window.claude.use('downloads'); }catch(e){ dl = null; }
+  var res = await trySavePdf(dl, blob, filename);
+  if (res === 'saved') toast('PDF guardado. Ahora compártelo con MDM y con el cliente.');
+  else if (res === 'unavailable') toast('El guardado de PDF no está disponible en esta vista.');
+  clearPendingPdf();
 }
 
 async function exportPdf(){
   var gen = $('#gen');
   if (!window.jspdf){ toast('No cargó el generador de PDF. Revisa la conexión y recarga la página.'); return; }
-  var prev = gen.textContent;
   gen.disabled = true; gen.textContent = 'Generando…';
   try{
     var doc = buildPDF();
     var blob = doc.output('blob');
     var safe = function(v, d){ return (String(v || '').trim().replace(/[^\w.-]+/g, '-') || d); };
     var name = 'Verificacion_' + safe(S.d.sku, 'SKU') + '_' + safe(S.d.serie, 'sin-serie') + '_' + (S.d.fecha || todayISO()) + '.pdf';
-    var res = await savePdf(blob, name);
-    var msg = '';
-    if (res === 'saved') msg = 'PDF guardado en Descargas. Desde ahí (o desde el aviso de descarga) puedes compartirlo con MDM y con el cliente.';
-    else if (res === 'shared') msg = 'PDF compartido/guardado con el nombre correcto.';
-    else if (res === 'unavailable') msg = 'El guardado de PDF no está disponible en esta vista.';
-    if (msg) toast(msg);
-    if (ARCHIVE_URL && (res === 'saved' || res === 'shared')){
-      toast(msg + ' Enviando copia al archivo…');
-      var ar = await archiveSubmission(blob, name);
-      msg += ar === 'enviada' ? ' Copia guardada en el archivo.'
-           : (archReason === 'falta la clave' ? ' Falta la clave de envío: la copia al archivo quedó pendiente.'
-           : ' No hubo conexión: la copia al archivo quedó pendiente y se envía sola después.');
-      toast(msg);
+    pendingPdf = {blob: blob, filename: name};
+    gen.textContent = 'Abrir o compartir PDF';
+    toast('PDF listo. Toca el botón otra vez para abrirlo o compartirlo.');
+    if (ARCHIVE_URL){
+      archiveSubmission(blob, name).then(function(ar){
+        if (ar === 'enviada') toast('Copia guardada en el archivo de Servicio Técnico.');
+      });
     }
   }catch(e){
     console.error(e);
     toast('No se pudo generar el PDF. Prueba de nuevo.');
+    gen.textContent = 'Generar PDF';
   }finally{
-    gen.disabled = false; gen.textContent = prev;
+    gen.disabled = false;
   }
 }
 
 function run(){
+  if (pendingPdf){ deliverPdf(pendingPdf.blob, pendingPdf.filename); return; }
   var list = issues();
   if (list.length) openSheet(list); else exportPdf();
 }
