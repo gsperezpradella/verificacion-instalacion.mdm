@@ -1379,7 +1379,7 @@ async function deliverPdf(blob, filename){
     try{
       var file = new File([blob], filename, {type:'application/pdf'});
       if (!navigator.canShare || navigator.canShare({files:[file]})){
-        navigator.share({files:[file], title: filename}).catch(function(){});
+        navigator.share({files:[file]}).catch(function(){});
         clearPendingPdf();
         return;
       }
