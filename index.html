@@ -1356,10 +1356,9 @@ async function savePdf(blob, filename){
     }
   }
   var url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
   var a = document.createElement('a'); a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
   return 'saved';
 }
 
@@ -1375,7 +1374,7 @@ async function exportPdf(){
     var name = 'Verificacion_' + safe(S.d.sku, 'SKU') + '_' + safe(S.d.serie, 'sin-serie') + '_' + (S.d.fecha || todayISO()) + '.pdf';
     var res = await savePdf(blob, name);
     var msg = '';
-    if (res === 'saved') msg = 'PDF guardado y abierto. Desde ahí puedes compartirlo con MDM y con el cliente.';
+    if (res === 'saved') msg = 'PDF guardado en Descargas. Desde ahí (o desde el aviso de descarga) puedes compartirlo con MDM y con el cliente.';
     else if (res === 'unavailable') msg = 'El guardado de PDF no está disponible en esta vista.';
     if (msg) toast(msg);
     if (ARCHIVE_URL && res === 'saved'){
