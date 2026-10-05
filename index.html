@@ -1355,19 +1355,11 @@ async function savePdf(blob, filename){
       throw e;
     }
   }
-  if (navigator.share){
-    try{
-      var file = new File([blob], filename, {type:'application/pdf'});
-      var canFiles = !navigator.canShare || navigator.canShare({files:[file]});
-      if (canFiles){ await navigator.share({files:[file], title: filename}); return 'shared'; }
-    }catch(e){
-      if (e && e.name === 'AbortError') return 'cancelled';
-    }
-  }
   var url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
   var a = document.createElement('a'); a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
   return 'saved';
 }
 
@@ -1383,11 +1375,10 @@ async function exportPdf(){
     var name = 'Verificacion_' + safe(S.d.sku, 'SKU') + '_' + safe(S.d.serie, 'sin-serie') + '_' + (S.d.fecha || todayISO()) + '.pdf';
     var res = await savePdf(blob, name);
     var msg = '';
-    if (res === 'saved') msg = 'PDF guardado. Ahora compártelo con MDM y con el cliente.';
-    else if (res === 'shared') msg = 'PDF compartido.';
+    if (res === 'saved') msg = 'PDF guardado y abierto. Desde ahí puedes compartirlo con MDM y con el cliente.';
     else if (res === 'unavailable') msg = 'El guardado de PDF no está disponible en esta vista.';
     if (msg) toast(msg);
-    if (ARCHIVE_URL && (res === 'saved' || res === 'shared')){
+    if (ARCHIVE_URL && res === 'saved'){
       toast(msg + ' Enviando copia al archivo…');
       var ar = await archiveSubmission(blob, name);
       msg += ar === 'enviada' ? ' Copia guardada en el archivo.'
